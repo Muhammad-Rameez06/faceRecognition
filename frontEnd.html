@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Face Recognition</title>
+</head>
+<body>
+
+<h2 style="color:brown; font-family:Cambria, Cochin, Georgia, Times, 'Times New Roman', serif; text-align: center;">Live Face Recognition System</h2>
+<video id="videoElement" width="640" height="480" style="display: block; margin: auto;" autoplay></video>
+<button id="captureButton" style="color: brown; text-align: center; display: block; margin: auto; margin-top: 20px; font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;">Capture Frame</button>
+
+<!-- Input field for student name and Show Record Button -->
+<div style="text-align: center; margin-top: 20px;">
+    <input type="text" id="studentName" placeholder="Enter student name">
+    <button id="showRecordButton" style="color: brown; font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;">Show Record</button>
+</div>
+
+<!-- Display area for attendance records -->
+<div id="attendanceRecord" style="text-align: center; margin-top: 20px; color: brown; font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;"></div>
+
+
+<script>
+    // Access the webcam and display it on the screen
+    const video = document.getElementById('videoElement');
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(function(stream) {
+            video.srcObject = stream;
+        })
+        .catch(function(error) {
+            console.log("Error accessing webcam: ", error);
+        });
+
+    // Capture frame when the button is pressed
+    document.getElementById("captureButton").addEventListener("click", async function() {
+    console.log("Capture button clicked");
+
+    // Set up the canvas and draw the video frame
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    console.log("Frame captured");
+
+    // Convert the canvas to a Blob and prepare it for sending
+    canvas.toBlob(async function(blob) {
+        console.log("Image blob created");
+
+        const formData = new FormData();
+        formData.append('file', blob, 'image.jpg');
+
+        // Send the captured frame to the FastAPI endpoint
+        try {
+            const response = await fetch('http://127.0.0.1:8000/recognize_and_record_attendance/', {
+                method: 'POST',
+                body: formData
+            });
+
+            console.log("Response received from API");
+            
+            
+            
+            const result = await response.json();
+            console.log("API result:", result); // Check the response structure
+if (result.attendance_records && result.attendance_records.length > 0) {
+    const names = result.attendance_records.map(record => record.name).join(', ');
+    alert('Detected face: ' + names + ' Attendance is taken Thankyou');
+} else {
+    alert("No faces detected or API response is in an unexpected format.");
+}
+        } catch (error) {
+            console.error("Fetch error:", error);
+            alert("An error occurred while processing the image.");
+        }
+    }, 'image/jpeg');
+});
+
+
+// Show attendance record for entered student name
+document.getElementById("showRecordButton").addEventListener("click", async function() {
+        const studentName = document.getElementById("studentName").value;
+        if (!studentName) {
+            alert("Please enter a student name.");
+            return;
+        }
+
+        try {
+            const response = await fetch(`http://127.0.0.1:8000/attendance/${studentName}`);
+            const result = await response.json();
+
+            // Display the attendance record
+            const recordDiv = document.getElementById("attendanceRecord");
+            if (result.attendance_records && result.attendance_records.length > 0) {
+                recordDiv.innerHTML = `<strong>Attendance Record for ${studentName}:</strong><br>` +
+                    result.attendance_records.map(record => `Date: ${record.date}, Status: ${record.present}`).join('<br>');
+            } else {
+                recordDiv.innerHTML = `No attendance records found for ${studentName}.`;
+            }
+        } catch (error) {
+            console.error("Fetch error:", error);
+            alert("An error occurred while fetching the attendance record.");
+        }
+    });
+
+
+</script>
+
+</body>
+</html>
