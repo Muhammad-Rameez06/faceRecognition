@@ -8,17 +8,27 @@
 <body>
 
 <h2 style="color:brown; font-family:Cambria, Cochin, Georgia, Times, 'Times New Roman', serif; text-align: center;">Live Face Recognition System</h2>
-<video id="videoElement" width="640" height="480" style="display: block; margin: auto;" autoplay></video>
+<video id="videoElement" width="490" height="330" style="display: block; margin: auto;" autoplay></video>
 <button id="captureButton" style="color: brown; text-align: center; display: block; margin: auto; margin-top: 20px; font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;">Capture Frame</button>
 
 <!-- Input field for student name and Show Record Button -->
 <div style="text-align: center; margin-top: 20px;">
+    <label style="color: brown; font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;">Enter your name to check overall attendance:</label>
     <input type="text" id="studentName" placeholder="Enter student name">
     <button id="showRecordButton" style="color: brown; font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;">Show Record</button>
 </div>
 
 <!-- Display area for attendance records -->
-<div id="attendanceRecord" style="text-align: center; margin-top: 20px; color: brown; font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;"></div>
+<div id="attendanceRecord" style="text-align: center; margin-top: 20px; color: brown; font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif; max-height: 100px; overflow-y: auto;" ></div>
+<div id="presentCount" style="text-align: center; margin-top: 20px; color: brown; font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;"></div>
+
+<div style="text-align: center; margin-top: 20px;">
+<label style="color: brown; font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;">Enter date to fetch the whole class attendance of that date:</label>
+<input type="date" id="attendanceDate" placeholder="Enter date">
+<button id="fetchAttendanceButton" style="color: brown; font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif; ">Fetch Attendance</button></div>
+<div id="attendanceRecords" style="text-align: center; margin-top: 20px; color: brown; font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif; max-height: 100px; overflow-y: auto;"></div>
+
+<div id="presentCount2" style="text-align: center; margin-top: 20px; color: brown; font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;"></div>
 
 
 <script>
@@ -65,11 +75,14 @@
             
             const result = await response.json();
             console.log("API result:", result); // Check the response structure
-if (result.attendance_records && result.attendance_records.length > 0) {
+if (result.message) {
+                alert(result.message);  // Show the backend message in an alert
+}
+else if (result.attendance_records && result.attendance_records.length > 0) {
     const names = result.attendance_records.map(record => record.name).join(', ');
-    alert('Detected face: ' + names + ' Attendance is taken Thankyou');
+    alert('Detected face: ' + names + '! ' + names + ' your attendance is taken Thankyou');
 } else {
-    alert("No faces detected or API response is in an unexpected format.");
+    alert("No face detected.");
 }
         } catch (error) {
             console.error("Fetch error:", error);
@@ -95,15 +108,54 @@ document.getElementById("showRecordButton").addEventListener("click", async func
             const recordDiv = document.getElementById("attendanceRecord");
             if (result.attendance_records && result.attendance_records.length > 0) {
                 recordDiv.innerHTML = `<strong>Attendance Record for ${studentName}:</strong><br>` +
-                    result.attendance_records.map(record => `Date: ${record.date}, Status: ${record.present}`).join('<br>');
+                    result.attendance_records.map(record => `Date: ${record.date}, time: ${record.time}, Present: ${record.present ? "Yes" : "No"}`).join('<br>');
+                    // count present of student
+                    const presentCount = result.attendance_records.filter(record => record.present === true).length;
+                    document.getElementById("presentCount").innerHTML = `<p>Total Presents: ${presentCount}</p>`;
             } else {
                 recordDiv.innerHTML = `No attendance records found for ${studentName}.`;
+                document.getElementById("presentCount").innerHTML = "";
             }
         } catch (error) {
             console.error("Fetch error:", error);
             alert("An error occurred while fetching the attendance record.");
         }
     });
+
+
+    document.getElementById("fetchAttendanceButton").addEventListener("click", async function() {
+    const date = document.getElementById("attendanceDate").value;
+    if (!date) {
+        alert("Please enter a date.");
+        return;
+    }
+
+    try {
+        const response = await fetch(`http://127.0.0.1:8000/attendance_of_day/${date}`);
+        if (response.ok) {
+            const result = await response.json();
+            const records = result.attendance_records;
+            
+            // Generate HTML for attendance records
+            let recordsHTML = "<strong>Attendance Record of Whole Class</strong>";
+            records.forEach(record => {
+                recordsHTML += `<p>Student: ${record.name}, Time: ${record.time}, Present: ${record.present ? "Yes" : "No"}</p>`;
+            });
+            
+            document.getElementById("attendanceRecords").innerHTML = recordsHTML;
+             // count present of student
+             const presentCount2 = result.attendance_records.filter(record => record.present === true).length;
+                    document.getElementById("presentCount2").innerHTML = `<p>Total Presents: ${presentCount2}</p>`;
+        } else {
+            document.getElementById("attendanceRecords").innerHTML = "No attendance records found for this date.";
+        }
+    } catch (error) {
+        console.error("Error fetching attendance records:", error);
+        alert("An error occurred while fetching attendance records.");
+    }
+});
+
+
 
 
 </script>
