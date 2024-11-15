@@ -189,7 +189,7 @@ document.getElementById("deleteSingleDayRecord").addEventListener("click", async
     }
 
     // Construct the query string
-    const apiUrl = `http://127.0.0.1:8000/delete_attendance/?name=${encodeURIComponent(nameOfStudent)}&date=${encodeURIComponent(dateOfDay)}`; // Replace with your actual endpoint
+    const apiUrl = `http://127.0.0.1:8000/delete_attendance/?name=${encodeURIComponent(nameOfStudent)}&date=${encodeURIComponent(dateOfDay)}`; s
 
     try {
         // Send DELETE request to the server
@@ -228,7 +228,7 @@ document.getElementById("deleteSingleDayRecord2").addEventListener("click", asyn
     }
 
     // Construct the query string
-    const apiUrl = `http://127.0.0.1:8000/delete_complete_attendance_of_specific_student/?name=${encodeURIComponent(nameOfStudent)}`; // Replace with your actual endpoint
+    const apiUrl = `http://127.0.0.1:8000/delete_complete_attendance_of_specific_student/?name=${encodeURIComponent(nameOfStudent)}`;
 
     try {
         // Send DELETE request to the server
