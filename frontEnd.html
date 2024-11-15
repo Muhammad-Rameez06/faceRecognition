@@ -99,7 +99,7 @@ else if (result.attendance_records && result.attendance_records.length > 0) {
     const names = result.attendance_records.map(record => record.name).join(', ');
     alert('Detected face: ' + names + '! ' + names + ' your attendance is taken Thankyou');
 } else {
-    alert("No face detected.");
+    alert("Unknown student.");
 }
         } catch (error) {
             console.error("Fetch error:", error);
